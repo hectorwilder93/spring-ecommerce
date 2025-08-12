@@ -22,14 +22,14 @@
 <body>
 
 <!-- Navigation -->
-<div th:include="usuario/template_usuario.html::header"></div>
+<div th:insert="~{usuario/template_usuario.html::header}"></div>
 
 <!-- Page Content -->
 <div class="container">
 
     <!-- Jumbotron Header -->
     <header class="jumbotron my-4">
-        <h1 class="display-3">Bienvenido a la tienda Ecommerce 2025</h1>
+        <h1 class="display-3">Bienvenido a nuestra tienda Ecommerce</h1>
         <p class="lead">Tu tienda de productos en Línea</p>
     </header>
 
@@ -43,7 +43,7 @@
                     <p class="card-text" th:text="${producto.nombre}"></p>
                 </div>
                 <div class="card-footer">
-                    <a href="productohome.html" class="btn btn-success">Ver producto</a>
+                    <a th:href="@{/productohome/{id} (id=${producto.id}) }" class="btn btn-success">Ver producto</a>
                 </div>
             </div>
         </div>
@@ -55,11 +55,10 @@
 <!-- /.container -->
 
 <!-- Footer -->
-<div th:include="usuario/template_usuario.html::footer"></div>
+<div th:insert="~{usuario/template_usuario.html::footer}"></div>
 
 <!-- Bootstrap core JavaScript -->
 <script th:src="@{vendor/jquery/jquery.min.js}"></script>
-<script th:src="@{vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 </body>
 </html>
