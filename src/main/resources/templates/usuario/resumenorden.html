@@ -85,7 +85,7 @@
 
                     <ul class="list-group">
                         <li class="list-group-item"><h5 th:text=" 'Total: ' + ${orden.total}"> Total:</h5></li>
-                        <a href="#" class="btn btn-dark">Generar</a>
+                        <a th:href="@{saveOrder}" class="btn btn-dark">Generar</a>
                     </ul>
                 </div>
             </div>
@@ -101,6 +101,5 @@
     <script th:src="@{/vendor/jquery/jquery.min.js}"></script>
     <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 
-</body>
-
+  </body>
 </html>
