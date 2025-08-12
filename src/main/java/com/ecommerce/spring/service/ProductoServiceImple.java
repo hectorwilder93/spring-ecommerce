@@ -1,7 +1,7 @@
 package com.ecommerce.spring.service;
 
 import com.ecommerce.spring.model.Producto;
-import com.ecommerce.spring.repository.ProductoRepository;
+import com.ecommerce.spring.repository.IProductoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +11,7 @@ import java.util.Optional;
 @Service
 public class ProductoServiceImple implements ProductoService{
     @Autowired
-    private ProductoRepository productoRepository;
+    private IProductoRepository productoRepository;
 
     @Override
     public Producto save(Producto producto) {
