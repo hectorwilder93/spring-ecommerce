@@ -8,7 +8,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Spring eCommerce</title>
+    <title>Tienda eCommerce</title>
 
 
     <!-- Bootstrap core CSS -->
@@ -22,7 +22,11 @@
 <body>
 
 <!-- Navigation -->
-<div th:insert="~{usuario/template_usuario.html::header}"></div>
+<!--Cuando el usuario esta logueado -->
+<div th:insert="~{usuario/template_usuario.html::header}" th:if="${sesion==null}"></div>
+
+<!--Cuando el usuario no esta logueado-->
+<div th:insert="~{usuario/template_usuario.html::header}" th:unless="${sesion==null}"></div>
 
 <!-- Page Content -->
 <div class="container">
