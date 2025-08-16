@@ -26,7 +26,7 @@
 <!--<div th:insert="~{usuario/template_usuario.html::header}" th:if="${sesion==null}"></div>-->
 
 <!--Cuando el usuario no esta logueado-->
-<div th:insert="~{usuario/template_usuario.html::header}" th:unless="${sesion==null}"></div>
+<div th:insert="~{usuario/template_usuario.html::header-user}" th:unless="${sesion==null}"></div>
 
 <!-- Page Content -->
 <div class="container">

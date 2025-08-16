@@ -26,7 +26,7 @@
 <div th:insert="~{usuario/template_usuario.html::header}" th:if="${sesion==null}"></div>
 
 <!--Cuando el usuario no esta logueado-->
-<div th:insert="~{usuario/template_usuario.html::header}" th:unless="${sesion==null}"></div>
+<div th:insert="~{usuario/template_usuario.html::header-user}" th:unless="${sesion==null}"></div>
 
 <!-- Page Content -->
 <div class="container">
@@ -63,7 +63,8 @@
                             <td th:text="${dorden.precio}"></td>
                             <td th:text="${dorden.cantidad}"></td>
                             <td th:text="${dorden.total}"></td>
-                            <td><a th:href="@{/delete/cart/{id} (id=${dorden.producto.id})}" class="btn btn-danger">Quitar</a></td>
+                            <td><a th:href="@{/delete/cart/{id} (id=${dorden.producto.id})}" class="btn btn-danger">Quitar</a>
+                            </td>
                         </tr>
                         </tbody>
                     </table>
@@ -88,7 +89,7 @@
 
 
     <!-- Bootstrap core JavaScript -->
-    <script th:src="@{/vendor/jquery/jquery.min.js}"></script>
-    <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
-  </body>
+<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
 </html>

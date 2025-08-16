@@ -39,7 +39,7 @@ public class OrdenServiceImpl implements IOrdenService {
 
         List<Integer> numeros= new ArrayList<Integer>();
 
-        ordenes.stream().forEach(o -> numeros.add(Integer.parseInt(o.getNumero())));
+        ordenes.forEach(o -> numeros.add(Integer.parseInt(o.getNumero())));
         if (ordenes.isEmpty()){
             numero=1;
         }else {
@@ -56,7 +56,6 @@ public class OrdenServiceImpl implements IOrdenService {
         } else if (numero < 10000) {
             numeroConcatenado = "000000" +String.valueOf(numero);
         }
-
         return numeroConcatenado;
     }
 

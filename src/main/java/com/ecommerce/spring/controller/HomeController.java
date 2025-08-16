@@ -21,9 +21,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static org.slf4j.Logger.*;
 
 @Controller
 @RequestMapping("/")
@@ -47,6 +44,7 @@ public class HomeController {
 
     //Datos de la orden
     Orden orden = new Orden();
+
 
     @GetMapping("")
     public String home(Model model, HttpSession session){

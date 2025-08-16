@@ -26,6 +26,7 @@
                         <div class="dropdown-menu"
                              aria-labelledby="navbarDropdownMenuLink">
                             <a class="dropdown-item" th:href="@{/productos}">Productos</a>
+                            <a class="dropdown-item" th:href="@{/usuario/cerrar}">Salir</a>
                         </div>
                     </li>
 
@@ -37,7 +38,7 @@
 
 
 <!-- Footer -->
-<div th:fragment="footer">
+<div th:fragment="footer" xmlns:th="http://www.w3.org/1999/xhtml">
     <footer class="py-5 bg-dark">
         <div class="container">
             <p class="m-0 text-center text-white">Copyright &copy; eCommerce 2025</p>
