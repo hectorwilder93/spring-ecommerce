@@ -5,7 +5,6 @@ import com.ecommerce.spring.model.Usuario;
 import com.ecommerce.spring.service.IUsuarioService;
 import com.ecommerce.spring.service.ProductoService;
 import com.ecommerce.spring.service.UploadFileService;
-import com.ecommerce.spring.service.UsuarioServiceImpl;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -45,8 +45,9 @@ public class ProductoController {
     }
 
     @PostMapping("/save")
-    public String save(Producto producto, @RequestParam("img") MultipartFile file, HttpSession session) throws IOException {
-        LOGGER.info("Este es el objeto producto {}", producto);
+    /*public String save(Producto producto, @RequestParam("img") MultipartFile file, HttpSession session) throws IOException {
+        LOGGER.info("Este es el objeto producto {}",producto);
+
         Usuario u= usuarioService.findById(Integer.parseInt(session.getAttribute("idusuario").toString())).get();
         producto.setUsuario(u);
         //Lógica para subir la imagen
@@ -59,10 +60,48 @@ public class ProductoController {
 
         productoService.save(producto);
         return "redirect:/productos";
+    }*/
+    public String save(Producto producto, @RequestParam("img") MultipartFile file, HttpSession session, RedirectAttributes redirectAttributes) throws IOException {
+        LOGGER.info("Este es el objeto producto {}", producto);
+
+        // Verificar si el usuario está en sesión
+        Object idUsuarioObj = session.getAttribute("idusuario");
+        if (idUsuarioObj == null) {
+            redirectAttributes.addFlashAttribute("error", "Debe iniciar sesión para crear productos");
+            return "redirect:/login"; // Redirigir al login
+        }
+
+        try {
+            Integer idUsuario = Integer.parseInt(idUsuarioObj.toString());
+            Optional<Usuario> usuarioOptional = usuarioService.findById(idUsuario);
+
+            if (usuarioOptional.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Usuario no encontrado");
+                return "redirect:/login";
+            }
+
+            Usuario u = usuarioOptional.get();
+            producto.setUsuario(u);
+
+            // Lógica para subir la imagen
+            if (producto.getId() == null) { // cuando se crea un producto
+                String nombreImagen = upload.saveImage(file);
+                producto.setImagen(nombreImagen);
+            } else {
+                // Lógica para actualización si es necesario
+            }
+
+            productoService.save(producto);
+            return "redirect:/productos";
+
+        } catch (NumberFormatException e) {
+            redirectAttributes.addFlashAttribute("error", "ID de usuario inválido");
+            return "redirect:/login";
+        }
     }
 
     @GetMapping("/edit/{id}")
-    public String edit(@PathVariable Integer id, Model model){
+    public String edit( @PathVariable Integer id, Model model){
         Producto producto = new Producto();
         Optional<Producto> optionalProducto=productoService.get(id);
         producto= optionalProducto.get();
@@ -74,23 +113,20 @@ public class ProductoController {
     }
 
     @PostMapping("/update")
-    public String update(Producto producto, @RequestParam("img") MultipartFile file) throws IOException {
-        if(file.isEmpty()){ //Editamos el producto pero no cambiamos la imagen.
-            Producto p=new Producto();
-            p=productoService.get(producto.getId()).get();
-            producto.setImagen(p.getImagen());
-        }else{ //Cuando se edita también la imagen
-            Producto p= new Producto();
-            p=productoService.get(producto.getId()).get();
+    public String update(Producto producto, @RequestParam("img") MultipartFile file ) throws IOException {
+        Producto p= new Producto();
+        p=productoService.get(producto.getId()).get();
 
-            //Eliminar cuando no sea la imagen por defecto
-            if (!p.getImagen().equals("default.jpg")){
+        if (file.isEmpty()) {// editamos el producto pero no cambiamos la imagen
+            producto.setImagen(p.getImagen());
+        }else {// cuando se edita también la imagen//eliminar cuando no sea la imagen por defecto
+            if (!p.getImagen().equals("default.jpg")) {
                 upload.deleteImage(p.getImagen());
             }
-
-            String nombreImagen=upload.saveImage(file);
+            String nombreImagen= upload.saveImage(file);
             producto.setImagen(nombreImagen);
         }
+        producto.setUsuario(p.getUsuario());
         productoService.update(producto);
         return "redirect:/productos";
     }

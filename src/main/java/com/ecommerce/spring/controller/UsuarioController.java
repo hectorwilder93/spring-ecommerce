@@ -10,7 +10,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,24 +46,45 @@ public class UsuarioController {
     public String login(){
         return "usuario/login";
     }
+    /*public String login(@RequestParam("email") String email,
+                        @RequestParam("password") String password,
+                        HttpSession session,
+                        RedirectAttributes redirectAttributes) {
+
+        Optional<Usuario> usuarioOptional = usuarioService.findByEmail(email);
+
+        if (usuarioOptional.isPresent() && usuarioOptional.get().getPassword().equals(password)) {
+            session.setAttribute("idusuario", usuarioOptional.get().getId());
+            return "redirect:/productos";
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Credenciales incorrectas");
+            return "redirect:/login";
+        }
+    }*/
 
     @PostMapping("/acceder")
-    public String acceder(Usuario usuario, HttpSession session){
+    public String acceder(@Validated Usuario usuario, BindingResult result, HttpSession session, RedirectAttributes redirectAttributes){
         logger.info("Accesos : {}", usuario);
+        if (result.hasErrors()){
+            redirectAttributes.addFlashAttribute("error","Datos inválidos");
+            return "redirect:/usuario/login";
+        }
 
         Optional<Usuario> user=usuarioService.findByEmail(usuario.getEmail());
 
-        if(user.isPresent()){
+        if(user.isPresent() && user.get().getPassword().equals(usuario.getPassword())){
             session.setAttribute("idusuario", user.get().getId());
+            session.setAttribute("usuario", user.get().getNombre());
             if (user.get().getTipo().equals("ADMIN")){
                 return "redirect:/administrador";
             }else {
                 return "redirect:/";
             }
         }else {
-            logger.info("Usuario no existe");
+            logger.info("Credenciales inválidas");
+            redirectAttributes.addFlashAttribute("Error", "Email o contraseña incorrectos");
+            return "redirect:/";
         }
-        return "redirect:/";
     }
 
     @GetMapping("/compras")

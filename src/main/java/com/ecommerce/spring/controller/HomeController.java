@@ -17,10 +17,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Controller
 @RequestMapping("/")
@@ -40,7 +37,7 @@ public class HomeController {
     private IDetalleOrdenService detalleOrdenService;
 
     //Almacena los detalles de la orden
-    List<DetalleOrden> detalles= new ArrayList<DetalleOrden>();
+    List<DetalleOrden> detalles= new ArrayList<>();
 
     //Datos de la orden
     Orden orden = new Orden();
@@ -85,13 +82,13 @@ public class HomeController {
 
         //Validación para que le producto no se agregue dos veces
         Integer idProducto = producto.getId();
-        boolean ingresado = detalles.stream().anyMatch(p ->  p.getProducto().getId()==idProducto);
+        boolean ingresado = detalles.stream().anyMatch(p -> p.getProducto().getId().equals(idProducto));
 
         if (!ingresado){
             detalles.add(detalleOrden);
         }
 
-        double sumaTotal = detalles.stream().mapToDouble(dt -> dt.getTotal()).sum();
+        double sumaTotal = detalles.stream().mapToDouble(DetalleOrden::getTotal).sum();
 
         orden.setTotal(sumaTotal);
         model.addAttribute("cart", detalles);
@@ -99,6 +96,7 @@ public class HomeController {
 
         return "usuario/carrito";
     }
+
     //Quitar el producto del carro de compras
     @GetMapping("/delete/cart/{id}")
     public String deleteProductCart(@PathVariable Integer id, Model model){
@@ -106,7 +104,7 @@ public class HomeController {
         //Lista de productos nuevos
         List<DetalleOrden> ordenesNueva = new ArrayList<DetalleOrden>();
         for (DetalleOrden detalleOrden: detalles){
-            if (detalleOrden.getProducto().getId()!=id){
+            if (!Objects.equals(detalleOrden.getProducto().getId(), id)){
                 ordenesNueva.add(detalleOrden);
             }
         }
@@ -115,7 +113,7 @@ public class HomeController {
         detalles=ordenesNueva;
 
         double sumaTotal=0;
-        sumaTotal = detalles.stream().mapToDouble(dt -> dt.getTotal()).sum();
+        sumaTotal = detalles.stream().mapToDouble(DetalleOrden::getTotal).sum();
 
         orden.setTotal(sumaTotal);
         model.addAttribute("cart", detalles);
