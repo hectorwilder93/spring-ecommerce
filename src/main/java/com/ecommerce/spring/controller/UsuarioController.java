@@ -8,6 +8,11 @@ import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -29,71 +34,105 @@ public class UsuarioController {
     @Autowired
     private IOrdenService ordenService;
 
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
     @GetMapping("/registro")
-    public String create(){
+    public String create(Model model){
+        if (!model.containsAttribute("usuario")){
+            model.addAttribute("usuario", new Usuario());
+        }
         return "usuario/registro";
     }
 
     @PostMapping("/save")
-    public String save(Usuario usuario){
+    public String save(@Validated @ModelAttribute("usuario") Usuario usuario, BindingResult result, RedirectAttributes redirectAttributes, HttpSession session) {
         logger.info("Usuario registro: {}", usuario);
-         usuario.setTipo("USER");
-         usuarioService.save(usuario);
-        return "redirect:/";
+        logger.info("Session attributes: {}", session.getAttributeNames());
+        logger.info("idusuario session attribute: {}", session.getAttribute("idusuario"));
+
+        if (result.hasErrors()) {
+
+            redirectAttributes.addFlashAttribute("error", "Datos invalidos");
+            redirectAttributes.addFlashAttribute("usuario", usuario);
+            return "redirect:/usuario/registro";
+        }
+        //Verificar si el email ya existe
+        Optional<Usuario> existingUser = usuarioService.findByEmail(usuario.getEmail());
+        if (existingUser.isPresent()) {
+            redirectAttributes.addFlashAttribute("Error", "El email ya esta registrado");
+            redirectAttributes.addFlashAttribute("usuario", usuario);
+            return "redirect:/usuario/registro";
+        }
+
+        usuario.setTipo("USER");
+        Usuario usuarioGuardado = usuarioService.save(usuario, passwordEncoder);
+
+        //Auto-login despues del registro
+        try {
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(usuario.getEmail(), usuario.getPassword()));
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            session.setAttribute("idusuario", usuarioGuardado.getId());
+            session.setAttribute("usuario", usuarioGuardado.getNombre());
+            session.setAttribute("tipoUsuario", usuarioGuardado.getTipo());
+
+            redirectAttributes.addFlashAttribute("success", "Registro exitoso. Bienvenido!");
+
+            //Redirigir según tipo de usuario
+            if ("ADMIN".equals(usuario.getTipo())) {
+                return "redirect:/administrador";
+            } else {
+                return "redirect:/";
+            }
+        } catch (Exception e) {
+            logger.error("Error en auto-login despues de registro: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("succes", "Registro exitoso. Por favor inicie sesión");
+            return "redirect://usuario/login";
+        }
     }
 
     @GetMapping("/login")
-    public String login(){
+    public String login(@RequestParam(value="error", required = false)String error,
+                        @RequestParam(value = "logout", required = false)String logout,
+                        HttpSession session, Model model){
+
+        // Mostrar mensajes flash de redirect
+        if (session.getAttribute("error") != null) {
+            model.addAttribute("error", session.getAttribute("error"));
+            session.removeAttribute("error");
+        }
+        if (session.getAttribute("success") != null) {
+            model.addAttribute("success", session.getAttribute("success"));
+            session.removeAttribute("success");
+        }
+
+        //Mostrar mensajes de spring security
+        if(error != null){
+            model.addAttribute("error", "credenciales inválidas");
+        }
+        if (logout != null){
+            model.addAttribute("success", "Sesión cerrada exitosamente");
+        }
+
         return "usuario/login";
     }
-    /*public String login(@RequestParam("email") String email,
-                        @RequestParam("password") String password,
-                        HttpSession session,
-                        RedirectAttributes redirectAttributes) {
 
-        Optional<Usuario> usuarioOptional = usuarioService.findByEmail(email);
-
-        if (usuarioOptional.isPresent() && usuarioOptional.get().getPassword().equals(password)) {
-            session.setAttribute("idusuario", usuarioOptional.get().getId());
-            return "redirect:/productos";
-        } else {
-            redirectAttributes.addFlashAttribute("error", "Credenciales incorrectas");
-            return "redirect:/login";
-        }
-    }*/
-
-    @PostMapping("/acceder")
-    public String acceder(@Validated Usuario usuario, BindingResult result, HttpSession session, RedirectAttributes redirectAttributes){
-        logger.info("Accesos : {}", usuario);
-        if (result.hasErrors()){
-            redirectAttributes.addFlashAttribute("error","Datos inválidos");
-            return "redirect:/usuario/login";
-        }
-
-        Optional<Usuario> user=usuarioService.findByEmail(usuario.getEmail());
-
-        if(user.isPresent() && user.get().getPassword().equals(usuario.getPassword())){
-            session.setAttribute("idusuario", user.get().getId());
-            session.setAttribute("usuario", user.get().getNombre());
-            if (user.get().getTipo().equals("ADMIN")){
-                return "redirect:/administrador";
-            }else {
-                return "redirect:/";
-            }
-        }else {
-            logger.info("Credenciales inválidas");
-            redirectAttributes.addFlashAttribute("Error", "Email o contraseña incorrectos");
-            return "redirect:/";
-        }
-    }
 
     @GetMapping("/compras")
     public String obtenerCompras(Model model, HttpSession session){
-        model.addAttribute("sesion", session.getAttribute("idusuario"));
-        Usuario usuario;
-        usuario = usuarioService.findById( Integer.parseInt(session.getAttribute("idusuario").toString()) ).get();
+        if (session.getAttribute("idusuario")== null){
+            return "redirect:/usuario/login";
+        }
+
+        Usuario usuario = usuarioService.findById( Integer.parseInt(session.getAttribute("idusuario").toString()) ).get();
         List<Orden> ordenes= ordenService.findByUsuario(usuario);
         model.addAttribute("ordenes", ordenes);
+        model.addAttribute("sesion", session.getAttribute("idusuario"));
 
         return "usuario/compras";
     }
@@ -102,19 +141,25 @@ public class UsuarioController {
     @GetMapping("/detalle/{id}")
     public String detalleCompra(@PathVariable Integer id, HttpSession session, Model model){
         logger.info("Id de la orden: {}", id);
+        if (session.getAttribute("idusuario")== null){
+            return "redirect:/usuario/login";
+        }
+
         Optional<Orden> orden = ordenService.findById(id);
-
-        model.addAttribute("detalles", orden.get().getDetalle());
-
-        //session
-        model.addAttribute("sesion", session.getAttribute("idusuario"));
-
-        return"usuario/detallecompra";
+        if (orden.isPresent()){
+            model.addAttribute("detalles", orden.get().getDetalle());
+            model.addAttribute("sesion", session.getAttribute("idusuario"));
+            return "usuario/detalleCompra";
+        } else {
+            return "redirect:/usuario/compras";
+        }
     }
 
     @GetMapping("/cerrar")
     public String cerrarSesion(HttpSession session){
         session.removeAttribute("idusuario");
+        session.removeAttribute("usuario");
+        session.removeAttribute("tipoUsuario");
         return "redirect:/";
     }
 }

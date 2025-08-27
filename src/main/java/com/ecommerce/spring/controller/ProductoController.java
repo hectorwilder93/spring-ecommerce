@@ -68,7 +68,7 @@ public class ProductoController {
         Object idUsuarioObj = session.getAttribute("idusuario");
         if (idUsuarioObj == null) {
             redirectAttributes.addFlashAttribute("error", "Debe iniciar sesión para crear productos");
-            return "redirect:/login"; // Redirigir al login
+            return "redirect:/usuario/login"; // Redirigir al login
         }
 
         try {
@@ -77,7 +77,7 @@ public class ProductoController {
 
             if (usuarioOptional.isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "Usuario no encontrado");
-                return "redirect:/login";
+                return "redirect:/usuario/login";
             }
 
             Usuario u = usuarioOptional.get();
@@ -96,7 +96,7 @@ public class ProductoController {
 
         } catch (NumberFormatException e) {
             redirectAttributes.addFlashAttribute("error", "ID de usuario inválido");
-            return "redirect:/login";
+            return "redirect:/usuario/login";
         }
     }
 
