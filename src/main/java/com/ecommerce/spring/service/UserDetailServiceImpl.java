@@ -34,31 +34,18 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        log.info("Buscando usuario: {}", username);
-
         Optional<Usuario> optionalUser=usuarioService.findByEmail(username);
 
         if(optionalUser.isPresent()){
             Usuario usuario=optionalUser.get();
             log.info("Usuario encontrado: {}", usuario.getEmail());
             log.info("Password en BD: {}", usuario.getPassword());
+            log.info("Tipo/Rol: {}", usuario.getTipo());
 
-            /*Configurar roles
-            List<GrantedAuthority> authorities = new ArrayList<>();
-            authorities.add(new SimpleGrantedAuthority("ROLE" + usuario.getTipo()));
-
-            //Guardar en sesión(Opcionla spring security ya maneja la autenticación)
-            session.setAttribute("idusuario", usuario.getId());
-            session.setAttribute("usuario", usuario.getNombre());*/
-
-            return User.builder()
-                    .username(usuario.getEmail())
-                    .password(usuario.getPassword())
-                    .roles(usuario.getTipo())
-                    .build();
+            return usuario;
         }else{
             log.error("Usuario no encontrado: {}", username);
-            throw new UsernameNotFoundException("Usuario no encontrado");
+            throw new UsernameNotFoundException("Usuario no encontrado con email: " + username);
         }
     }
 }

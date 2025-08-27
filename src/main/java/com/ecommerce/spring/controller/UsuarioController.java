@@ -1,9 +1,11 @@
 package com.ecommerce.spring.controller;
 
+import com.ecommerce.spring.component.SessionUtils;
 import com.ecommerce.spring.model.Orden;
 import com.ecommerce.spring.model.Usuario;
 import com.ecommerce.spring.service.IOrdenService;
 import com.ecommerce.spring.service.IUsuarioService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +42,10 @@ public class UsuarioController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
+    @Autowired
+    private SessionUtils sessionUtils;
+
+
     @GetMapping("/registro")
     public String create(Model model){
         if (!model.containsAttribute("usuario")){
@@ -49,7 +55,8 @@ public class UsuarioController {
     }
 
     @PostMapping("/save")
-    public String save(@Validated @ModelAttribute("usuario") Usuario usuario, BindingResult result, RedirectAttributes redirectAttributes, HttpSession session) {
+    public String save(@Validated @ModelAttribute("usuario") Usuario usuario, BindingResult result,
+                       RedirectAttributes redirectAttributes, HttpSession session, HttpServletRequest request) {
         logger.info("Usuario registro: {}", usuario);
         logger.info("Session attributes: {}", session.getAttributeNames());
         logger.info("idusuario session attribute: {}", session.getAttribute("idusuario"));
@@ -60,6 +67,7 @@ public class UsuarioController {
             redirectAttributes.addFlashAttribute("usuario", usuario);
             return "redirect:/usuario/registro";
         }
+
         //Verificar si el email ya existe
         Optional<Usuario> existingUser = usuarioService.findByEmail(usuario.getEmail());
         if (existingUser.isPresent()) {
@@ -77,9 +85,8 @@ public class UsuarioController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            session.setAttribute("idusuario", usuarioGuardado.getId());
-            session.setAttribute("usuario", usuarioGuardado.getNombre());
-            session.setAttribute("tipoUsuario", usuarioGuardado.getTipo());
+            //Usar sessionutils para establecer los atributos de sesión
+            sessionUtils.setSessionAttributes(authentication, session);
 
             redirectAttributes.addFlashAttribute("success", "Registro exitoso. Bienvenido!");
 

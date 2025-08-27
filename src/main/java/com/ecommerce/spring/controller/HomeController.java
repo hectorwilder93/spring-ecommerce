@@ -1,6 +1,7 @@
 package com.ecommerce.spring.controller;
 
 
+import com.ecommerce.spring.component.SessionUtils;
 import com.ecommerce.spring.model.DetalleOrden;
 import com.ecommerce.spring.model.Orden;
 import com.ecommerce.spring.model.Producto;
@@ -13,6 +14,7 @@ import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -36,6 +38,9 @@ public class HomeController {
     @Autowired
     private IDetalleOrdenService detalleOrdenService;
 
+    @Autowired
+    private SessionUtils sessionUtils;
+
     //Almacena los detalles de la orden
     List<DetalleOrden> detalles= new ArrayList<>();
 
@@ -43,13 +48,17 @@ public class HomeController {
     Orden orden = new Orden();
 
 
+
     @GetMapping("")
-    public String home(Model model, HttpSession session){
+    public String home(Model model, HttpSession session, Authentication authentication){
+        if (authentication !=null && authentication.isAuthenticated()){
+            sessionUtils.setSessionAttributes(authentication, session);
+        }
         log.info("Sesión de usuario: {}", session.getAttribute("idusuario"));
         model.addAttribute("productos", productoService.findAll());
-
         //session
         model.addAttribute("sesion", session.getAttribute("idusuario"));
+        model.addAttribute("tipoUsuario", session.getAttribute("tipoUsuario"));
         return "usuario/home";
     }
 
